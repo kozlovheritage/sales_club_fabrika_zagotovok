@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://widget.prodamus.ru/src/init.css">
   <style>
     :root{--cream:#F5EFE6;--warm-white:#FBF8F2;--pink:#D4768A;--pink-light:#EDCAD2;--pink-dark:#B85A6D;--yellow:#EDE8A8;--text:#5B5A5A;--text-mid:#5C4F47;--text-light:#8C7D74;--border:rgba(44,36,32,.08);--shadow:0 4px 32px rgba(44,36,32,.08);--shadow-lg:0 16px 64px rgba(44,36,32,.14);--r:20px;--r-sm:12px;--transition:all .4s cubic-bezier(.4,0,.2,1)}
     *,*::before,*::after{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}body{margin:0;font-family:Inter,'Century Gothic',CenturyGothic,'Trebuchet MS',sans-serif;background:var(--cream);color:var(--text);line-height:1.4;overflow-x:hidden}button{font:inherit}a{color:inherit}.container{max-width:1180px;margin:0 auto;padding:0 28px}h1,h2,h3,h4,p,ul{margin-top:0}h1,h2{font-family:Inter,'Century Gothic',sans-serif;font-weight:700;letter-spacing:-.02em;color:var(--text)}h1{font-size:clamp(2.6rem,5vw,4.5rem);line-height:.94}h2{font-size:clamp(1.8rem,3.2vw,2.8rem);line-height:1.05}h3{font-size:1.15rem;line-height:1.2;color:var(--text)}p{font-size:1rem;line-height:1.5;color:var(--text-mid);margin-bottom:1rem}p:last-child{margin-bottom:0}section{scroll-margin-top:75px}.label{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 14px;border-radius:50px;margin-bottom:1.4rem;background:rgba(212,118,138,.12);color:var(--pink)}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:16px 36px;border-radius:50px;font-family:inherit;font-size:1rem;font-weight:700;text-decoration:none;border:0;cursor:pointer;transition:var(--transition);letter-spacing:.01em;background:var(--pink);color:#fdf3f3;box-shadow:0 8px 32px rgba(212,118,138,.35);text-align:center}.btn:hover{background:var(--pink-dark);transform:translateY(-3px);box-shadow:0 16px 48px rgba(212,118,138,.45)}.btn-ghost{background:transparent;color:var(--pink);border:2px solid var(--pink);box-shadow:none}.btn-ghost:hover{background:var(--pink);color:#fdf3f3}.reveal{opacity:0;transform:translateY(36px);transition:opacity .8s ease,transform .8s ease}.reveal.visible{opacity:1;transform:translateY(0)}.reveal-delay-1{transition-delay:.1s}.reveal-delay-2{transition-delay:.2s}.reveal-delay-3{transition-delay:.3s}.reveal-delay-4{transition-delay:.4s}
@@ -155,7 +156,7 @@
               <li><strong>ЧАТ И ПОДДЕРЖКА КУРАТОРОВ</strong>Закрытое сообщество для вопросов, общения и обмена опытом.</li>
             </ul>
             </details>
-            <a href="https://t.me/zabota_veramlgn" class="btn" target="_blank" rel="noopener noreferrer" aria-label="Вступить в клуб по расширенному тарифу через службу заботы">Вступить в клуб →</a>
+            <button type="button" class="btn checkout-button" data-tariff="premium" aria-label="Оплатить расширенный тариф">Вступить в клуб →</button>
           </article>
           <article class="pricing-card reveal reveal-delay-2">
             <div class="pricing-name">Базовый</div><div class="pricing-price">5 900 ₽ <span class="old">6 700 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
@@ -178,10 +179,10 @@
               <li class="disabled"><strong>ДОСТУП К ПЛАТФОРМЕ И ЧАТУ</strong>Платформа с материалами и поддержка кураторов в чате.</li>
             </ul>
             </details>
-            <a href="https://t.me/zabota_veramlgn" class="btn btn-ghost" target="_blank" rel="noopener noreferrer" aria-label="Вступить в клуб по базовому тарифу через службу заботы">Вступить в клуб →</a>
+            <button type="button" class="btn btn-ghost checkout-button" data-tariff="basic" aria-label="Оплатить базовый тариф">Вступить в клуб →</button>
           </article>
         </div>
-         <div class="pricing-note reveal"><p>Пока на сайте нет прямой оплаты. Чтобы уточнить участие и условия, заходите в <a href="https://t.me/zabota_veramlgn" target="_blank" rel="noopener noreferrer">службу заботы</a>.</p></div>
+          <div class="pricing-note reveal"><p>После оплаты базового тарифа материалы придут на почту через Prodamus. Для расширенного тарифа данные для входа на платформу придут отдельным письмом. Вопросы — в <a href="https://t.me/zabota_veramlgn" target="_blank" rel="noopener noreferrer">службу заботы</a>.</p><p id="checkoutStatus" role="status" aria-live="polite"></p></div>
       </div>
     </section>
 
@@ -268,6 +269,44 @@
     document.getElementById('revPrev').addEventListener('click',()=>track.scrollBy({left:-Math.max(track.clientWidth-slideStep(),slideStep()),behavior:'smooth'}));
     document.getElementById('revNext').addEventListener('click',()=>track.scrollBy({left:Math.max(track.clientWidth-slideStep(),slideStep()),behavior:'smooth'}));
     track.addEventListener('scroll',updateDots,{passive:true});window.addEventListener('resize',renderDots);renderDots();
+  </script>
+  <script src="https://widget.prodamus.ru/src/init.js" async></script>
+  <script>
+    (() => {
+      const status = document.getElementById('checkoutStatus');
+      const endpoint = 'https://club-fabrika-zagotovok-kozlovheritage.onreza.app/api/checkout/session';
+      const waitForWidget = () => new Promise((resolve, reject) => {
+        let tries = 0;
+        const check = () => {
+          if (typeof window.payformInit === 'function') return resolve();
+          if (++tries >= 10) return reject(new Error('Не удалось загрузить платёжный модуль. Попробуйте позже.'));
+          setTimeout(check, 400);
+        };
+        check();
+      });
+      document.querySelectorAll('.checkout-button').forEach(button => {
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          status.textContent = 'Подготавливаем оплату…';
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({tariff: button.dataset.tariff})
+            });
+            const checkout = await response.json();
+            if (!response.ok) throw new Error(checkout.message || 'Оплата пока недоступна.');
+            await waitForWidget();
+            await window.payformInit('vera-mlgn.payform.ru', checkout);
+            status.textContent = '';
+          } catch (error) {
+            status.textContent = error.message || 'Не удалось открыть оплату. Попробуйте позже.';
+          } finally {
+            button.disabled = false;
+          }
+        });
+      });
+    })();
   </script>
 </body>
 </html>
