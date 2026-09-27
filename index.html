@@ -277,7 +277,11 @@
     (() => {
       const status = document.getElementById('checkoutStatus');
       const emailInput = document.getElementById('checkoutEmail');
-      const endpoint = 'https://club-fabrika-zagotovok-kozlovheritage.onreza.app/api/checkout/session';
+      const isPreview = location.hostname.endsWith('.onreza.app') &&
+        location.hostname !== 'sales-club-fabrika-zagotovok-kozlovheritage.onreza.app';
+      const endpoint = (isPreview
+        ? 'https://club-fabrika-zagotovok-git-auth-prodamus-kozlovheritage.onreza.app'
+        : 'https://club-fabrika-zagotovok-kozlovheritage.onreza.app') + '/api/checkout/session';
       const waitForWidget = () => new Promise((resolve, reject) => {
         let tries = 0;
         const check = () => {
