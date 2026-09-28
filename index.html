@@ -33,6 +33,31 @@
     @media(max-width:700px){.benefits-grid,.journey-grid,.pricing-grid{grid-template-columns:1fr}.pricing-grid{max-width:440px}.reviews-head{display:block}.reviews-count{margin-top:16px}.foot-grid{grid-template-columns:1fr;gap:28px}.foot-bottom{flex-direction:column;text-align:center}section:not(.hero){padding:72px 0}.hero{padding:130px 0 80px;min-height:auto}.hero-photo-col{margin-bottom:1.5rem}.transition-band{height:32px}}
     @media(max-width:500px){.container{padding:0 20px}h1{font-size:2.35rem}h2{font-size:1.8rem}.hero-actions .btn{width:100%}.hero-tag{right:-8px}.hero-badge{left:-8px}.benefit-card,.journey-card{padding:30px 24px}.material-item summary{padding:18px}.material-content{padding:0 20px 20px 20px}.pricing-card{padding:38px 26px}.pricing-price{font-size:2.7rem}.author-gallery{gap:12px}.faq-question{padding:18px 20px}.faq-answer{padding:0 20px 20px}.rev-slide{width:250px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+    body.checkout-locked{overflow:hidden}
+    .consent-overlay{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(44,36,32,.62);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+    .consent-overlay[hidden]{display:none}
+    .consent-dialog{width:min(100%,520px);max-height:calc(100dvh - 36px);overflow-y:auto;background:var(--warm-white);border-radius:24px;padding:32px;box-shadow:var(--shadow-lg);position:relative}
+    .consent-close{position:absolute;right:18px;top:15px;border:0;background:transparent;color:var(--text-light);font-size:1.7rem;line-height:1;cursor:pointer;padding:6px 9px;border-radius:8px}
+    .consent-close:hover{color:var(--pink-dark);background:rgba(212,118,138,.08)}
+    .consent-dialog h2{font-size:1.8rem;text-align:center;margin:0 24px 8px}
+    .consent-subtitle{text-align:center;font-size:.9rem;color:var(--text-light);margin:0 0 20px}
+    .consent-tariff{background:var(--cream);border-radius:var(--r-sm);padding:12px 16px;margin:0 0 20px;font-size:.92rem;color:var(--text-mid)}
+    .consent-tariff strong{color:var(--pink-dark)}
+    .consent-field{display:block;margin:0 0 16px}
+    .consent-field>span{display:block;font-size:.9rem;font-weight:700;margin-bottom:7px}
+    .consent-field input{width:100%;padding:12px 14px;border:1px solid var(--pink-light);border-radius:var(--r-sm);background:#fff;color:var(--text);font:inherit}
+    .consent-field input:focus{outline:2px solid var(--pink);outline-offset:2px}
+    .consent-field input:disabled{background:#f2eee9;color:var(--text-light);cursor:not-allowed}
+    .consent-field small{display:block;font-size:.77rem;color:var(--text-light);line-height:1.45;margin-top:6px}
+    .consent-check{display:flex;align-items:flex-start;gap:10px;margin:13px 0;color:var(--text-mid);font-size:.86rem;line-height:1.45;cursor:pointer}
+    .consent-check input{width:18px;height:18px;flex:none;margin:2px 0 0;accent-color:var(--pink);cursor:pointer}
+    .consent-check a{color:var(--pink-dark);text-decoration:underline;text-underline-offset:2px}
+    .consent-pay{width:100%;margin-top:16px}
+    .consent-pay:disabled{background:#c9c5c3;color:#fff;box-shadow:none;cursor:not-allowed;transform:none}
+    .consent-status{font-size:.84rem;text-align:center;color:var(--pink-dark);margin:12px 0 0}
+    .consent-status:empty{display:none}
+    .consent-help{text-align:center;font-size:.77rem;color:var(--text-light);margin:12px 0 0}
+    @media(max-width:500px){.consent-overlay{padding:12px}.consent-dialog{padding:26px 20px;max-height:calc(100dvh - 24px)}.consent-dialog h2{font-size:1.55rem}.consent-check{font-size:.83rem}}
   </style>
 </head>
 <body>
@@ -135,7 +160,6 @@
     <section class="pricing" id="pricing">
       <div class="container">
         <div class="section-header reveal"><h2>Тарифы</h2><p>Выберите подходящий вариант участия в клубе</p></div>
-        <div class="checkout-email"><label for="checkoutEmail">Email для получения доступа</label><input id="checkoutEmail" type="email" autocomplete="email" inputmode="email" required placeholder="name@example.com" aria-describedby="checkoutEmailHint"><small id="checkoutEmailHint">После оплаты Prodamus отправит на этот адрес письмо с доступом. Проверьте его перед оплатой.</small></div>
         <div class="pricing-grid">
           <article class="pricing-card popular reveal reveal-delay-1">
             <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 800 ₽ <span class="old">7 400 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
@@ -184,7 +208,7 @@
             <button type="button" class="btn btn-ghost checkout-button" data-tariff="basic" aria-label="Оплатить базовый тариф">Вступить в клуб →</button>
           </article>
         </div>
-          <div class="pricing-note reveal"><p>После оплаты Prodamus отправит письмо: базовому тарифу — доступ в закрытый Telegram-клуб, расширенному — ссылку на платформу, email и пароль. Вопросы — в <a href="https://t.me/zabota_veramlgn" target="_blank" rel="noopener noreferrer">службу заботы</a>.</p><p id="checkoutStatus" role="status" aria-live="polite"></p></div>
+          <div class="pricing-note reveal"><p>После оплаты Prodamus отправит письмо: базовому тарифу — доступ в закрытый Telegram-клуб, расширенному — ссылку на платформу, email и пароль. Вопросы — в <a href="https://t.me/zabota_veramlgn" target="_blank" rel="noopener noreferrer">службу заботы</a>.</p></div>
       </div>
     </section>
 
@@ -241,6 +265,42 @@
     </div></section>
   </main>
 
+  <div class="consent-overlay" id="consentOverlay" hidden>
+    <div class="consent-dialog" role="dialog" aria-modal="true" aria-labelledby="consentTitle" aria-describedby="consentSubtitle">
+      <button type="button" class="consent-close" id="closeConsent" aria-label="Закрыть условия покупки">&times;</button>
+      <h2 id="consentTitle">Условия покупки</h2>
+      <p class="consent-subtitle" id="consentSubtitle">Укажите email и подтвердите согласия перед оплатой</p>
+      <p class="consent-tariff">Выбранный тариф: <strong id="consentTariff"></strong></p>
+      <form id="checkoutConsentForm" novalidate>
+        <label class="consent-field">
+          <span>Ваш email</span>
+          <input id="checkoutEmail" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="example@mail.ru" aria-describedby="checkoutEmailHint">
+          <small id="checkoutEmailHint">После оплаты на этот адрес придёт письмо с доступом.</small>
+        </label>
+        <label class="consent-field">
+          <span>Промокод (если есть)</span>
+          <input id="checkoutPromo" name="promo" type="text" autocomplete="off" placeholder="Введите промокод" disabled aria-describedby="checkoutPromoHint">
+          <small id="checkoutPromoHint">Пока только для показа: промокоды ещё не применяются.</small>
+        </label>
+        <div class="consent-check">
+          <input id="consentPd" type="checkbox" required>
+          <label for="consentPd">Даю согласие на <a href="https://disk.yandex.ru/i/3RzYTim7hZO0Nw" target="_blank" rel="noopener noreferrer">обработку персональных данных</a> в соответствии с <a href="https://disk.yandex.ru/i/vIxEZ0HkXsj42Q" target="_blank" rel="noopener noreferrer">политикой обработки ПД</a>.</label>
+        </div>
+        <div class="consent-check">
+          <input id="consentMail" type="checkbox" required>
+          <label for="consentMail">Даю согласие на получение <a href="https://disk.yandex.ru/i/TpVA_h_RWP1UyQ" target="_blank" rel="noopener noreferrer">рассылки</a>.</label>
+        </div>
+        <div class="consent-check">
+          <input id="consentOffer" type="checkbox" required>
+          <label for="consentOffer">Соглашаюсь с условиями <a href="https://clck.ru/3RY9kk" target="_blank" rel="noopener noreferrer">оферты клуба</a>.</label>
+        </div>
+        <button type="submit" class="btn consent-pay" id="consentPay" disabled>Перейти к оплате</button>
+        <p class="consent-status" id="checkoutStatus" role="status" aria-live="polite"></p>
+        <p class="consent-help">Платёж откроется в защищённой форме Prodamus.</p>
+      </form>
+    </div>
+  </div>
+
   <footer><div class="container">
     <div class="foot-grid">
       <div class="foot-brand"><a href="#hero" class="logo">Фабрика <span>Заготовок</span></a><p>Кулинарный клуб Веры Малыгиной — система заготовок для удобного, вкусного и здорового питания.</p></div>
@@ -277,11 +337,60 @@
     (() => {
       const status = document.getElementById('checkoutStatus');
       const emailInput = document.getElementById('checkoutEmail');
+      const overlay = document.getElementById('consentOverlay');
+      const dialog = overlay.querySelector('.consent-dialog');
+      const form = document.getElementById('checkoutConsentForm');
+      const payButton = document.getElementById('consentPay');
+      const consentBoxes = ['consentPd', 'consentMail', 'consentOffer'].map(id => document.getElementById(id));
+      let activeTariff = null;
+      let returnFocus = null;
+      let submitting = false;
+      let requestVersion = 0;
       const isPreview = location.hostname.endsWith('.onreza.app') &&
         location.hostname !== 'sales-club-fabrika-zagotovok-kozlovheritage.onreza.app';
       const endpoint = (isPreview
         ? 'https://club-fabrika-zagotovok-git-auth-prodamus-kozlovheritage.onreza.app'
         : 'https://club-fabrika-zagotovok-kozlovheritage.onreza.app') + '/api/checkout/session';
+      const canPay = () => Boolean(activeTariff && emailInput.value.trim() && emailInput.checkValidity() && consentBoxes.every(box => box.checked));
+      const updatePayButton = () => { payButton.disabled = submitting || !canPay(); };
+      const closeModal = () => {
+        if (overlay.hidden) return;
+        requestVersion++;
+        overlay.hidden = true;
+        document.body.classList.remove('checkout-locked');
+        activeTariff = null;
+        status.textContent = '';
+        updatePayButton();
+        returnFocus?.focus();
+      };
+      const openModal = button => {
+        activeTariff = button.dataset.tariff;
+        returnFocus = button;
+        document.getElementById('consentTariff').textContent = button.closest('.pricing-card').querySelector('.pricing-name').textContent.trim();
+        consentBoxes.forEach(box => { box.checked = false; });
+        status.textContent = '';
+        overlay.hidden = false;
+        document.body.classList.add('checkout-locked');
+        updatePayButton();
+        emailInput.focus();
+      };
+      document.querySelectorAll('.checkout-button').forEach(button => {
+        button.addEventListener('click', () => openModal(button));
+      });
+      document.getElementById('closeConsent').addEventListener('click', closeModal);
+      overlay.addEventListener('click', event => { if (event.target === overlay) closeModal(); });
+      document.addEventListener('keydown', event => {
+        if (overlay.hidden) return;
+        if (event.key === 'Escape') { closeModal(); return; }
+        if (event.key !== 'Tab') return;
+        const focusable = [...dialog.querySelectorAll('button:not(:disabled),input:not(:disabled),a[href]')];
+        if (!focusable.length) return;
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      });
+      emailInput.addEventListener('input', updatePayButton);
+      consentBoxes.forEach(box => box.addEventListener('change', updatePayButton));
       const waitForWidget = () => new Promise((resolve, reject) => {
         let tries = 0;
         const check = () => {
@@ -291,34 +400,36 @@
         };
         check();
       });
-      document.querySelectorAll('.checkout-button').forEach(button => {
-        button.addEventListener('click', async () => {
-          const email = emailInput.value.trim().toLowerCase();
-          if (!emailInput.checkValidity() || !email) {
-            status.textContent = 'Укажите правильный email для письма с доступом.';
-            emailInput.focus();
-            emailInput.scrollIntoView({behavior: 'smooth', block: 'center'});
-            return;
-          }
-          button.disabled = true;
-          status.textContent = 'Подготавливаем оплату…';
-          try {
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({tariff: button.dataset.tariff, email})
-            });
-            const checkout = await response.json();
-            if (!response.ok) throw new Error(checkout.message || 'Оплата пока недоступна.');
-            await waitForWidget();
-            await window.payformInit('vera-mlgn.payform.ru', checkout);
-            status.textContent = '';
-          } catch (error) {
-            status.textContent = error.message || 'Не удалось открыть оплату. Попробуйте позже.';
-          } finally {
-            button.disabled = false;
-          }
-        });
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!canPay() || submitting) { updatePayButton(); return; }
+        const tariff = activeTariff;
+        const email = emailInput.value.trim().toLowerCase();
+        const version = ++requestVersion;
+        submitting = true;
+        payButton.textContent = 'Подготавливаем оплату…';
+        status.textContent = '';
+        updatePayButton();
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({tariff, email})
+          });
+          if (version !== requestVersion) return;
+          const checkout = await response.json();
+          if (!response.ok) throw new Error(checkout.message || 'Оплата пока недоступна.');
+          await waitForWidget();
+          if (version !== requestVersion) return;
+          await window.payformInit('vera-mlgn.payform.ru', checkout);
+          if (version === requestVersion) closeModal();
+        } catch (error) {
+          if (version === requestVersion) status.textContent = error.message || 'Не удалось открыть оплату. Попробуйте позже.';
+        } finally {
+          submitting = false;
+          payButton.textContent = 'Перейти к оплате';
+          updatePayButton();
+        }
       });
     })();
   </script>
