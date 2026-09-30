@@ -162,7 +162,7 @@
         <div class="section-header reveal"><h2>Тарифы</h2><p>Выберите подходящий вариант участия в клубе</p></div>
         <div class="pricing-grid">
           <article class="pricing-card popular reveal reveal-delay-1">
-            <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 800 ₽ <span class="old">7 400 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
+            <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 790 ₽ <span class="old">7 400 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
             <ul class="pricing-highlights"><li>180+ рецептов заготовок</li><li>450+ рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Доступ к чату и платформе клуба</li></ul>
             <details class="pricing-details"><summary>Что входит в тариф</summary>
             <ul class="pricing-features">
@@ -185,7 +185,7 @@
             <button type="button" class="btn checkout-button" data-tariff="premium" aria-label="Оплатить расширенный тариф">Вступить в клуб →</button>
           </article>
           <article class="pricing-card reveal reveal-delay-2">
-            <div class="pricing-name">Базовый</div><div class="pricing-price">5 900 ₽ <span class="old">6 700 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
+            <div class="pricing-name">Базовый</div><div class="pricing-price">5 990 ₽ <span class="old">6 700 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
             <ul class="pricing-highlights"><li>До 120 рецептов заготовок</li><li>До 250 рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Материалы в закрытом Telegram-канале</li></ul>
             <details class="pricing-details"><summary>Что входит в тариф</summary>
             <ul class="pricing-features">
@@ -279,9 +279,10 @@
         </label>
         <label class="consent-field">
           <span>Промокод (если есть)</span>
-          <input id="checkoutPromo" name="promo" type="text" autocomplete="off" placeholder="Введите промокод" disabled aria-describedby="checkoutPromoHint">
-          <small id="checkoutPromoHint">Пока только для показа: промокоды ещё не применяются.</small>
+          <input id="checkoutPromo" name="promo" type="text" autocomplete="off" maxlength="100" placeholder="Введите промокод" aria-describedby="checkoutPromoHint">
+          <small id="checkoutPromoHint">Два раза можно ввести только SKIDKA1C (через пробел). Разные промокоды не суммируются.</small>
         </label>
+        <p class="consent-tariff" id="checkoutQuote" role="status" aria-live="polite"></p>
         <div class="consent-check">
           <input id="consentPd" type="checkbox" required>
           <label for="consentPd">Даю согласие на <a href="https://disk.yandex.ru/i/3RzYTim7hZO0Nw" target="_blank" rel="noopener noreferrer">обработку персональных данных</a> в соответствии с <a href="https://disk.yandex.ru/i/vIxEZ0HkXsj42Q" target="_blank" rel="noopener noreferrer">политикой обработки ПД</a>.</label>
@@ -337,6 +338,8 @@
     (() => {
       const status = document.getElementById('checkoutStatus');
       const emailInput = document.getElementById('checkoutEmail');
+      const promoInput = document.getElementById('checkoutPromo');
+      const quoteNode = document.getElementById('checkoutQuote');
       const overlay = document.getElementById('consentOverlay');
       const dialog = overlay.querySelector('.consent-dialog');
       const form = document.getElementById('checkoutConsentForm');
@@ -351,7 +354,43 @@
       const endpoint = (isPreview
         ? 'https://club-fabrika-zagotovok-git-auth-prodamus-kozlovheritage.onreza.app'
         : 'https://club-fabrika-zagotovok-kozlovheritage.onreza.app') + '/api/checkout/session';
-      const canPay = () => Boolean(activeTariff && emailInput.value.trim() && emailInput.checkValidity() && consentBoxes.every(box => box.checked));
+      const prices = {premium: 6790, basic: 5990}; // Active phase: presales; keep in sync with club checkout.mjs.
+      const fixed = {
+        CLUBB3: {premium: 5990, basic: 5190},
+        FABRIKA1R: {premium: 3400, basic: 2700},
+        FABRIKA1B: {premium: 4500, basic: 3500},
+        FABRIKA2PR: {premium: 1690, basic: 1490},
+        FABRIKAB2P: {premium: 2190, basic: 1990}
+      };
+      const quotePrice = (tariff, input) => {
+        if (!prices[tariff] || typeof input !== 'string' || input.length > 100) throw new Error('Некорректный промокод');
+        const codes = input.trim().toUpperCase().split(/[\s,;]+/u).filter(Boolean);
+        if (codes.length > 2) throw new Error('Можно применить не более двух кодов SKIDKA1C');
+        let price = prices[tariff];
+        if (codes.length) {
+          if (codes.every(code => code === 'SKIDKA1C')) price -= 590 * codes.length;
+          else if (codes.length === 1 && fixed[codes[0]]) price = fixed[codes[0]][tariff];
+          else throw new Error(codes.some(code => !fixed[code] && code !== 'SKIDKA1C')
+            ? 'Промокод не найден' : 'Эти промокоды нельзя суммировать');
+        }
+        return {price, base: prices[tariff]};
+      };
+      const money = rub => new Intl.NumberFormat('ru-RU').format(rub) + ' ₽';
+      const showQuote = () => {
+        if (!activeTariff) return false;
+        try {
+          const quote = quotePrice(activeTariff, promoInput.value);
+          quoteNode.textContent = 'К оплате: ' + money(quote.price) +
+            (quote.price !== quote.base ? ' (вместо ' + money(quote.base) + ')' : '');
+          quoteNode.style.color = '';
+          return true;
+        } catch (error) {
+          quoteNode.textContent = error.message;
+          quoteNode.style.color = '#a3273b';
+          return false;
+        }
+      };
+      const canPay = () => Boolean(activeTariff && showQuote() && emailInput.value.trim() && emailInput.checkValidity() && consentBoxes.every(box => box.checked));
       const updatePayButton = () => { payButton.disabled = submitting || !canPay(); };
       const closeModal = () => {
         if (overlay.hidden) return;
@@ -367,10 +406,12 @@
         activeTariff = button.dataset.tariff;
         returnFocus = button;
         document.getElementById('consentTariff').textContent = button.closest('.pricing-card').querySelector('.pricing-name').textContent.trim();
+        promoInput.value = '';
         consentBoxes.forEach(box => { box.checked = false; });
         status.textContent = '';
         overlay.hidden = false;
         document.body.classList.add('checkout-locked');
+        showQuote();
         updatePayButton();
         emailInput.focus();
       };
@@ -390,6 +431,7 @@
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       });
       emailInput.addEventListener('input', updatePayButton);
+      promoInput.addEventListener('input', updatePayButton);
       consentBoxes.forEach(box => box.addEventListener('change', updatePayButton));
       const waitForWidget = () => new Promise((resolve, reject) => {
         let tries = 0;
@@ -405,8 +447,11 @@
         if (!canPay() || submitting) { updatePayButton(); return; }
         const tariff = activeTariff;
         const email = emailInput.value.trim().toLowerCase();
+        const promo = promoInput.value.trim();
         const version = ++requestVersion;
         submitting = true;
+        emailInput.disabled = true;
+        promoInput.disabled = true;
         payButton.textContent = 'Подготавливаем оплату…';
         status.textContent = '';
         updatePayButton();
@@ -414,7 +459,7 @@
           const response = await fetch(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({tariff, email})
+            body: JSON.stringify({tariff, email, promo})
           });
           if (version !== requestVersion) return;
           const checkout = await response.json();
@@ -427,6 +472,8 @@
           if (version === requestVersion) status.textContent = error.message || 'Не удалось открыть оплату. Попробуйте позже.';
         } finally {
           submitting = false;
+          emailInput.disabled = false;
+          promoInput.disabled = false;
           payButton.textContent = 'Перейти к оплате';
           updatePayButton();
         }
