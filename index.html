@@ -44,6 +44,7 @@
     .consent-tariff{background:var(--cream);border-radius:var(--r-sm);padding:12px 16px;margin:0 0 20px;font-size:.92rem;color:var(--text-mid)}
     .consent-tariff strong{color:var(--pink-dark)}
     .consent-field{display:block;margin:0 0 16px}
+    .consent-field[hidden]{display:none}
     .consent-field>span{display:block;font-size:.9rem;font-weight:700;margin-bottom:7px}
     .consent-field input{width:100%;padding:12px 14px;border:1px solid var(--pink-light);border-radius:var(--r-sm);background:#fff;color:var(--text);font:inherit}
     .consent-field input:focus{outline:2px solid var(--pink);outline-offset:2px}
@@ -162,7 +163,7 @@
         <div class="section-header reveal"><h2>Тарифы</h2><p>Выберите подходящий вариант участия в клубе</p></div>
         <div class="pricing-grid">
           <article class="pricing-card popular reveal reveal-delay-1">
-            <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 790 ₽ <span class="old">7 400 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
+            <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 790 ₽ <span class="old">8 490 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
             <ul class="pricing-highlights"><li>180+ рецептов заготовок</li><li>450+ рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Доступ к чату и платформе клуба</li></ul>
             <details class="pricing-details"><summary>Что входит в тариф</summary>
             <ul class="pricing-features">
@@ -185,7 +186,7 @@
             <button type="button" class="btn checkout-button" data-tariff="premium" aria-label="Оплатить расширенный тариф">Вступить в клуб →</button>
           </article>
           <article class="pricing-card reveal reveal-delay-2">
-            <div class="pricing-name">Базовый</div><div class="pricing-price">5 990 ₽ <span class="old">6 700 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
+            <div class="pricing-name">Базовый</div><div class="pricing-price">5 990 ₽ <span class="old">6 990 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
             <ul class="pricing-highlights"><li>До 120 рецептов заготовок</li><li>До 250 рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Материалы в закрытом Telegram-канале</li></ul>
             <details class="pricing-details"><summary>Что входит в тариф</summary>
             <ul class="pricing-features">
@@ -277,7 +278,7 @@
           <input id="checkoutEmail" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="example@mail.ru" aria-describedby="checkoutEmailHint">
           <small id="checkoutEmailHint">После оплаты на этот адрес придёт письмо с доступом.</small>
         </label>
-        <label class="consent-field">
+        <label class="consent-field" id="checkoutNameField">
           <span>Имя и фамилия *</span>
           <input id="checkoutName" name="buyerName" type="text" autocomplete="name" required maxlength="120" placeholder="Имя Фамилия" aria-describedby="checkoutNameHint">
           <small id="checkoutNameHint">Укажите оба слова — так они будут отображаться в личном кабинете.</small>
@@ -285,7 +286,7 @@
         <label class="consent-field">
           <span>Промокод (если есть)</span>
           <input id="checkoutPromo" name="promo" type="text" autocomplete="off" maxlength="100" placeholder="Введите промокод" aria-describedby="checkoutPromoHint">
-          <small id="checkoutPromoHint">Два раза можно ввести только SKIDKA1C (через пробел). Разные промокоды не суммируются.</small>
+          <small id="checkoutPromoHint">Промокоды по разным акциям не суммируются.</small>
         </label>
         <p class="consent-tariff" id="checkoutQuote" role="status" aria-live="polite"></p>
         <div class="consent-check">
@@ -344,6 +345,7 @@
       const status = document.getElementById('checkoutStatus');
       const emailInput = document.getElementById('checkoutEmail');
       const nameInput = document.getElementById('checkoutName');
+      const nameField = document.getElementById('checkoutNameField');
       const promoInput = document.getElementById('checkoutPromo');
       const quoteNode = document.getElementById('checkoutQuote');
       const overlay = document.getElementById('consentOverlay');
@@ -397,9 +399,10 @@
         }
       };
       const validName = () => /^[\p{L}][\p{L}\p{M}'’\-]*(?: [\p{L}][\p{L}\p{M}'’\-]*)+$/u.test(nameInput.value.trim().replace(/\s+/gu, ' '));
-      const canPay = () => Boolean(activeTariff && showQuote() && emailInput.value.trim() && emailInput.checkValidity() && nameInput.checkValidity() && consentBoxes.every(box => box.checked));
+      const canPay = () => Boolean(activeTariff && showQuote() && emailInput.value.trim() && emailInput.checkValidity() &&
+        (activeTariff !== 'premium' || nameInput.checkValidity()) && consentBoxes.every(box => box.checked));
       const updatePayButton = () => {
-        nameInput.setCustomValidity(!nameInput.value.trim() || validName() ? '' : 'Укажите имя и фамилию');
+        nameInput.setCustomValidity(activeTariff !== 'premium' || !nameInput.value.trim() || validName() ? '' : 'Укажите имя и фамилию');
         payButton.disabled = submitting || !canPay();
       };
       const closeModal = () => {
@@ -416,6 +419,13 @@
         activeTariff = button.dataset.tariff;
         returnFocus = button;
         document.getElementById('consentTariff').textContent = button.closest('.pricing-card').querySelector('.pricing-name').textContent.trim();
+        const premium = activeTariff === 'premium';
+        document.getElementById('consentSubtitle').textContent = premium
+          ? 'Укажите имя, фамилию и email, затем подтвердите согласия перед оплатой'
+          : 'Укажите email и подтвердите согласия перед оплатой';
+        nameField.hidden = !premium;
+        nameInput.required = premium;
+        nameInput.disabled = !premium;
         emailInput.value = '';
         nameInput.value = '';
         promoInput.value = '';
@@ -460,7 +470,7 @@
         if (!canPay() || submitting) { updatePayButton(); return; }
         const tariff = activeTariff;
         const email = emailInput.value.trim().toLowerCase();
-        const buyerName = nameInput.value.trim().replace(/\s+/gu, ' ');
+        const buyerName = tariff === 'premium' ? nameInput.value.trim().replace(/\s+/gu, ' ') : undefined;
         const promo = promoInput.value.trim();
         const version = ++requestVersion;
         submitting = true;
@@ -474,7 +484,7 @@
           const response = await fetch(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({tariff, email, buyerName, promo})
+            body: JSON.stringify({tariff, email, ...(buyerName ? {buyerName} : {}), promo})
           });
           if (version !== requestVersion) return;
           const checkout = await response.json();
@@ -488,7 +498,7 @@
         } finally {
           submitting = false;
           emailInput.disabled = false;
-          nameInput.disabled = false;
+          nameInput.disabled = activeTariff !== 'premium' || overlay.hidden;
           promoInput.disabled = false;
           payButton.textContent = 'Перейти к оплате';
           updatePayButton();
