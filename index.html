@@ -269,13 +269,18 @@
     <div class="consent-dialog" role="dialog" aria-modal="true" aria-labelledby="consentTitle" aria-describedby="consentSubtitle">
       <button type="button" class="consent-close" id="closeConsent" aria-label="Закрыть условия покупки">&times;</button>
       <h2 id="consentTitle">Условия покупки</h2>
-      <p class="consent-subtitle" id="consentSubtitle">Укажите email и подтвердите согласия перед оплатой</p>
+      <p class="consent-subtitle" id="consentSubtitle">Укажите имя, фамилию и email, затем подтвердите согласия перед оплатой</p>
       <p class="consent-tariff">Выбранный тариф: <strong id="consentTariff"></strong></p>
       <form id="checkoutConsentForm" novalidate>
         <label class="consent-field">
           <span>Ваш email</span>
           <input id="checkoutEmail" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="example@mail.ru" aria-describedby="checkoutEmailHint">
           <small id="checkoutEmailHint">После оплаты на этот адрес придёт письмо с доступом.</small>
+        </label>
+        <label class="consent-field">
+          <span>Имя и фамилия *</span>
+          <input id="checkoutName" name="buyerName" type="text" autocomplete="name" required maxlength="120" placeholder="Имя Фамилия" aria-describedby="checkoutNameHint">
+          <small id="checkoutNameHint">Укажите оба слова — так они будут отображаться в личном кабинете.</small>
         </label>
         <label class="consent-field">
           <span>Промокод (если есть)</span>
@@ -338,6 +343,7 @@
     (() => {
       const status = document.getElementById('checkoutStatus');
       const emailInput = document.getElementById('checkoutEmail');
+      const nameInput = document.getElementById('checkoutName');
       const promoInput = document.getElementById('checkoutPromo');
       const quoteNode = document.getElementById('checkoutQuote');
       const overlay = document.getElementById('consentOverlay');
@@ -390,8 +396,12 @@
           return false;
         }
       };
-      const canPay = () => Boolean(activeTariff && showQuote() && emailInput.value.trim() && emailInput.checkValidity() && consentBoxes.every(box => box.checked));
-      const updatePayButton = () => { payButton.disabled = submitting || !canPay(); };
+      const validName = () => /^[\p{L}][\p{L}\p{M}'’\-]*(?: [\p{L}][\p{L}\p{M}'’\-]*)+$/u.test(nameInput.value.trim().replace(/\s+/gu, ' '));
+      const canPay = () => Boolean(activeTariff && showQuote() && emailInput.value.trim() && emailInput.checkValidity() && nameInput.checkValidity() && consentBoxes.every(box => box.checked));
+      const updatePayButton = () => {
+        nameInput.setCustomValidity(!nameInput.value.trim() || validName() ? '' : 'Укажите имя и фамилию');
+        payButton.disabled = submitting || !canPay();
+      };
       const closeModal = () => {
         if (overlay.hidden) return;
         requestVersion++;
@@ -406,6 +416,8 @@
         activeTariff = button.dataset.tariff;
         returnFocus = button;
         document.getElementById('consentTariff').textContent = button.closest('.pricing-card').querySelector('.pricing-name').textContent.trim();
+        emailInput.value = '';
+        nameInput.value = '';
         promoInput.value = '';
         consentBoxes.forEach(box => { box.checked = false; });
         status.textContent = '';
@@ -431,6 +443,7 @@
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       });
       emailInput.addEventListener('input', updatePayButton);
+      nameInput.addEventListener('input', updatePayButton);
       promoInput.addEventListener('input', updatePayButton);
       consentBoxes.forEach(box => box.addEventListener('change', updatePayButton));
       const waitForWidget = () => new Promise((resolve, reject) => {
@@ -447,10 +460,12 @@
         if (!canPay() || submitting) { updatePayButton(); return; }
         const tariff = activeTariff;
         const email = emailInput.value.trim().toLowerCase();
+        const buyerName = nameInput.value.trim().replace(/\s+/gu, ' ');
         const promo = promoInput.value.trim();
         const version = ++requestVersion;
         submitting = true;
         emailInput.disabled = true;
+        nameInput.disabled = true;
         promoInput.disabled = true;
         payButton.textContent = 'Подготавливаем оплату…';
         status.textContent = '';
@@ -459,7 +474,7 @@
           const response = await fetch(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({tariff, email, promo})
+            body: JSON.stringify({tariff, email, buyerName, promo})
           });
           if (version !== requestVersion) return;
           const checkout = await response.json();
@@ -473,6 +488,7 @@
         } finally {
           submitting = false;
           emailInput.disabled = false;
+          nameInput.disabled = false;
           promoInput.disabled = false;
           payButton.textContent = 'Перейти к оплате';
           updatePayButton();
