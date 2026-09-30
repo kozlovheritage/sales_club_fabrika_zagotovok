@@ -41,6 +41,7 @@
     .consent-tariff{background:var(--cream);border-radius:var(--r-sm);padding:12px 16px;margin:0 0 20px;font-size:.92rem;color:var(--text-mid)}
     .consent-tariff strong{color:var(--pink-dark)}
     .consent-field{display:block;margin:0 0 16px}
+    .consent-field[hidden]{display:none}
     .consent-field>span{display:block;font-size:.9rem;font-weight:700;margin-bottom:7px}
     .consent-field input{width:100%;padding:12px 14px;border:1px solid var(--pink-light);border-radius:var(--r-sm);background:#fff;color:var(--text);font:inherit}
     .consent-field input:focus-visible,.consent-close:focus-visible,.checkout-button:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
@@ -154,7 +155,7 @@
         <div class="section-header reveal"><h2>Тарифы</h2><p>Выберите подходящий вариант участия в клубе</p></div>
         <div class="pricing-grid">
           <article class="pricing-card popular reveal reveal-delay-1">
-            <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 790 ₽ <span class="old">7 400 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
+            <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 790 ₽ <span class="old">8 490 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
             <ul class="pricing-highlights"><li>180+ рецептов заготовок</li><li>450+ рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Доступ к чату и платформе клуба</li></ul>
             <details class="pricing-details"><summary>Что входит в тариф</summary>
             <ul class="pricing-features">
@@ -177,7 +178,7 @@
             <button type="button" class="btn checkout-button" data-tariff="premium" aria-label="Проверить цену расширенного тарифа">Вступить в клуб →</button>
           </article>
           <article class="pricing-card reveal reveal-delay-2">
-            <div class="pricing-name">Базовый</div><div class="pricing-price">5 990 ₽ <span class="old">6 700 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
+            <div class="pricing-name">Базовый</div><div class="pricing-price">5 990 ₽ <span class="old">6 990 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
             <ul class="pricing-highlights"><li>До 120 рецептов заготовок</li><li>До 250 рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Материалы в закрытом Telegram-канале</li></ul>
             <details class="pricing-details"><summary>Что входит в тариф</summary>
             <ul class="pricing-features">
@@ -185,7 +186,6 @@
               <li><strong>РЕЦЕПТЫ (8 РАЗДЕЛОВ)</strong>Заготовки из овощей, птицы, мяса, рыбы, творога, а также паштеты, вафли, галеты и домашние колбасы. Видео и PDF-сборники.</li>
               <li><strong>БУЛЬОНЫ</strong>Концентраты и супы-конструкторы.</li>
               <li><strong>СОУСЫ</strong>Соусы с морепродуктами, овощами, мясом и рыбой и блюда с их использованием.</li>
-              <li><strong>КОНСТРУКТОР БЛЮД</strong>ПП-пицца с начинками, заготовки для напитков, куриные вафли.</li>
               <li><strong>МАТЕРИАЛЫ В TELEGRAM-КАНАЛЕ</strong>Материалы базового тарифа доступны через Telegram-канал, без доступа к платформе.</li>
               <li class="disabled"><strong>ПИТАНИЕ ДЛЯ ЗДОРОВЬЯ</strong>Материалы нутрициолога и гематолога.</li>
               <li class="disabled"><strong>ВЫПЕЧКА В ЗАГОТОВКИ</strong>18 рецептов выпечки и десертов.</li>
@@ -269,7 +269,7 @@
         <input id="checkoutEmail" type="email" autocomplete="email" required placeholder="example@mail.ru">
         <small>После подключения оплаты на этот адрес будет приходить письмо с доступом.</small>
       </label>
-      <label class="consent-field">
+      <label class="consent-field" id="checkoutNameField">
         <span>Имя и фамилия *</span>
         <input id="checkoutName" type="text" autocomplete="name" required maxlength="120" placeholder="Имя Фамилия" aria-describedby="checkoutNameHint">
         <small id="checkoutNameHint">Укажите оба слова — так они будут отображаться в личном кабинете после оплаты.</small>
@@ -277,7 +277,7 @@
       <label class="consent-field">
         <span>Промокод (если есть)</span>
         <input id="checkoutPromo" type="text" autocomplete="off" maxlength="100" placeholder="Введите промокод" aria-describedby="checkoutPromoHint">
-        <small id="checkoutPromoHint">Два раза можно ввести только SKIDKA1C (через пробел). Разные промокоды не суммируются.</small>
+        <small id="checkoutPromoHint">Промокоды по разным акциям не суммируются.</small>
       </label>
       <p class="consent-tariff" id="checkoutQuote" role="status" aria-live="polite"></p>
       <div class="consent-check"><input id="consentPd" type="checkbox"><label for="consentPd">Даю согласие на <a href="https://disk.yandex.ru/i/3RzYTim7hZO0Nw" target="_blank" rel="noopener noreferrer">обработку персональных данных</a> в соответствии с <a href="https://disk.yandex.ru/i/vIxEZ0HkXsj42Q" target="_blank" rel="noopener noreferrer">политикой обработки ПД</a>.</label></div>
@@ -323,6 +323,8 @@
       const overlay = document.getElementById('consentOverlay');
       const dialog = overlay.querySelector('.consent-dialog');
       const promoInput = document.getElementById('checkoutPromo');
+      const nameInput = document.getElementById('checkoutName');
+      const nameField = document.getElementById('checkoutNameField');
       const quoteNode = document.getElementById('checkoutQuote');
       let activeTariff = null;
       let returnFocus = null;
@@ -371,8 +373,15 @@
         activeTariff = button.dataset.tariff;
         returnFocus = button;
         document.getElementById('consentTariff').textContent = button.closest('.pricing-card').querySelector('.pricing-name').textContent.trim();
+        const premium = activeTariff === 'premium';
+        document.getElementById('consentSubtitle').textContent = premium
+          ? 'Укажите имя, фамилию и email, затем проверьте цену и условия тарифа'
+          : 'Укажите email, затем проверьте цену и условия тарифа';
+        nameField.hidden = !premium;
+        nameInput.required = premium;
+        nameInput.disabled = !premium;
         document.getElementById('checkoutEmail').value = '';
-        document.getElementById('checkoutName').value = '';
+        nameInput.value = '';
         promoInput.value = '';
         for (const box of dialog.querySelectorAll('input[type=checkbox]')) box.checked = false;
         overlay.hidden = false;
