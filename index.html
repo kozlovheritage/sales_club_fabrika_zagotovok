@@ -364,6 +364,10 @@
         ? 'https://club-fabrika-zagotovok-git-auth-prodamus-kozlovheritage.onreza.app'
         : 'https://platform-clubfabrika3.ru') + '/api/checkout/session';
       const prices = {premium: 6790, basic: 5990}; // Active phase: presales; keep in sync with club checkout.mjs.
+      const collectionDiscounts = {
+        premium: [1100, 1400],
+        basic: [1000, 1100]
+      };
       const fixed = {
         CLUBB3: {premium: 5990, basic: 5190},
         FABRIKA1R: {premium: 3400, basic: 2700},
@@ -377,7 +381,7 @@
         if (codes.length > 2) throw new Error('Можно применить не более двух кодов SKIDKA1C');
         let price = prices[tariff];
         if (codes.length) {
-          if (codes.every(code => code === 'SKIDKA1C')) price -= 590 * codes.length;
+          if (codes.every(code => code === 'SKIDKA1C')) price -= collectionDiscounts[tariff][codes.length - 1];
           else if (codes.length === 1 && fixed[codes[0]]) price = fixed[codes[0]][tariff];
           else throw new Error(codes.some(code => !fixed[code] && code !== 'SKIDKA1C')
             ? 'Промокод не найден' : 'Эти промокоды нельзя суммировать');
