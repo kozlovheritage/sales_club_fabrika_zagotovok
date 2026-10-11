@@ -359,11 +359,42 @@
       let returnFocus = null;
       let submitting = false;
       let requestVersion = 0;
+      let consentDocuments = null;
       const isPreview = location.hostname.endsWith('.onreza.app') &&
         location.hostname !== 'sales-club-fabrika-zagotovok-kozlovheritage.onreza.app';
-      const endpoint = (isPreview
+      const clubBase = (isPreview
         ? 'https://club-fabrika-zagotovok-git-auth-prodamus-kozlovheritage.onreza.app'
-        : 'https://platform-clubfabrika3.ru') + '/api/checkout/session';
+        : 'https://platform-clubfabrika3.ru');
+      const endpoint = clubBase + '/api/checkout/session';
+      const documentLinks = {
+        personalData: document.querySelector('label[for="consentPd"] a'),
+        policy: document.querySelectorAll('label[for="consentPd"] a')[1],
+        marketing: document.querySelector('label[for="consentMail"] a'),
+        offer: document.querySelector('label[for="consentOffer"] a')
+      };
+      const loadConsentDocuments = async version => {
+        try {
+          const response = await fetch(clubBase + '/api/legal/checkout-documents', {cache: 'no-store'});
+          if (!response.ok) throw new Error('Не удалось загрузить документы. Закройте форму и попробуйте снова.');
+          const data = await response.json();
+          if (version !== requestVersion || overlay.hidden) return;
+          if (!data.documents || !Object.keys(documentLinks).every(key =>
+            typeof data.documents[key]?.id === 'string' &&
+            data.documents[key]?.href === clubBase + '/legal/documents/' + data.documents[key].id)) {
+            throw new Error('Не удалось определить редакции документов.');
+          }
+          consentDocuments = data.documents;
+          Object.entries(documentLinks).forEach(([key, link]) => { link.href = consentDocuments[key].href; });
+          status.textContent = '';
+        } catch (error) {
+          if (version === requestVersion && !overlay.hidden) status.textContent = error.message;
+        } finally {
+          if (version === requestVersion && !overlay.hidden) {
+            consentBoxes.forEach(box => { box.disabled = false; });
+            updatePayButton();
+          }
+        }
+      };
       const prices = {premium: 6790, basic: 5990}; // Active phase: presales; keep in sync with club checkout.mjs.
       const collectionDiscounts = {
         premium: [1100, 1400],
@@ -405,7 +436,7 @@
         }
       };
       const validName = () => /^[\p{L}][\p{L}\p{M}'’\-]*(?: [\p{L}][\p{L}\p{M}'’\-]*)+$/u.test(nameInput.value.trim().replace(/\s+/gu, ' '));
-      const canPay = () => Boolean(activeTariff && showQuote() && emailInput.value.trim() && emailInput.checkValidity() &&
+      const canPay = () => Boolean(activeTariff && consentDocuments && showQuote() && emailInput.value.trim() && emailInput.checkValidity() &&
         (activeTariff !== 'premium' || nameInput.checkValidity()) && consentBoxes.every(box => box.checked));
       const updatePayButton = () => {
         nameInput.setCustomValidity(activeTariff !== 'premium' || !nameInput.value.trim() || validName() ? '' : 'Укажите имя и фамилию');
@@ -417,6 +448,7 @@
         overlay.hidden = true;
         document.body.classList.remove('checkout-locked');
         activeTariff = null;
+        consentDocuments = null;
         status.textContent = '';
         updatePayButton();
         returnFocus?.focus();
@@ -436,12 +468,15 @@
         nameInput.value = '';
         promoInput.value = '';
         consentBoxes.forEach(box => { box.checked = false; });
-        status.textContent = '';
+        consentBoxes.forEach(box => { box.disabled = true; });
+        consentDocuments = null;
+        status.textContent = 'Загружаем редакции документов…';
         overlay.hidden = false;
         document.body.classList.add('checkout-locked');
         showQuote();
         updatePayButton();
         emailInput.focus();
+        loadConsentDocuments(requestVersion);
       };
       document.querySelectorAll('.checkout-button').forEach(button => {
         button.addEventListener('click', () => openModal(button));
@@ -490,7 +525,14 @@
           const response = await fetch(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({tariff, email, ...(buyerName ? {buyerName} : {}), promo})
+            body: JSON.stringify({tariff, email, ...(buyerName ? {buyerName} : {}), promo,
+              consents: {
+                personalData: consentBoxes[0].checked,
+                marketing: consentBoxes[1].checked,
+                offer: consentBoxes[2].checked,
+                documents: Object.fromEntries(Object.entries(consentDocuments).map(([key, doc]) => [key, doc.id]))
+              }
+            })
           });
           if (version !== requestVersion) return;
           const checkout = await response.json();
