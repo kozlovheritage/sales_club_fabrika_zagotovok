@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="https://widget.prodamus.ru/src/init.css">
+  <link rel="stylesheet" href="./prodamus-init.css">
   <style>
     :root{--cream:#F5EFE6;--warm-white:#FBF8F2;--pink:#D4768A;--pink-light:#EDCAD2;--pink-dark:#B85A6D;--yellow:#EDE8A8;--text:#5B5A5A;--text-mid:#5C4F47;--text-light:#8C7D74;--border:rgba(44,36,32,.08);--shadow:0 4px 32px rgba(44,36,32,.08);--shadow-lg:0 16px 64px rgba(44,36,32,.14);--r:20px;--r-sm:12px;--transition:all .4s cubic-bezier(.4,0,.2,1)}
     *,*::before,*::after{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}body{margin:0;font-family:Inter,'Century Gothic',CenturyGothic,'Trebuchet MS',sans-serif;background:var(--cream);color:var(--text);line-height:1.4;overflow-x:hidden}button{font:inherit}a{color:inherit}.container{max-width:1180px;margin:0 auto;padding:0 28px}h1,h2,h3,h4,p,ul{margin-top:0}h1,h2{font-family:Inter,'Century Gothic',sans-serif;font-weight:700;letter-spacing:-.02em;color:var(--text)}h1{font-size:clamp(2.6rem,5vw,4.5rem);line-height:.94}h2{font-size:clamp(1.8rem,3.2vw,2.8rem);line-height:1.05}h3{font-size:1.15rem;line-height:1.2;color:var(--text)}p{font-size:1rem;line-height:1.5;color:var(--text-mid);margin-bottom:1rem}p:last-child{margin-bottom:0}section{scroll-margin-top:75px}.label{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:5px 14px;border-radius:50px;margin-bottom:1.4rem;background:rgba(212,118,138,.12);color:var(--pink)}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:16px 36px;border-radius:50px;font-family:inherit;font-size:1rem;font-weight:700;text-decoration:none;border:0;cursor:pointer;transition:var(--transition);letter-spacing:.01em;background:var(--pink);color:#fdf3f3;box-shadow:0 8px 32px rgba(212,118,138,.35);text-align:center}.btn:hover{background:var(--pink-dark);transform:translateY(-3px);box-shadow:0 16px 48px rgba(212,118,138,.45)}.btn-ghost{background:transparent;color:var(--pink);border:2px solid var(--pink);box-shadow:none}.btn-ghost:hover{background:var(--pink);color:#fdf3f3}.reveal{opacity:0;transform:translateY(36px);transition:opacity .8s ease,transform .8s ease}.reveal.visible{opacity:1;transform:translateY(0)}.reveal-delay-1{transition-delay:.1s}.reveal-delay-2{transition-delay:.2s}.reveal-delay-3{transition-delay:.3s}.reveal-delay-4{transition-delay:.4s}
@@ -305,6 +305,8 @@
         </div>
         <button type="submit" class="btn consent-pay" id="consentPay" disabled>Перейти к оплате</button>
         <p class="consent-status" id="checkoutStatus" role="status" aria-live="polite"></p>
+        <button type="button" class="btn btn-ghost" id="retryCheckoutDocuments" hidden style="width:100%;margin-top:12px;">Повторить загрузку документов</button>
+        <button type="button" class="btn btn-ghost" id="directCheckoutPay" hidden style="width:100%;margin-top:12px;">Открыть страницу оплаты без виджета</button>
         <p class="consent-help">Платёж откроется в защищённой форме Prodamus.</p>
       </form>
     </div>
@@ -341,7 +343,6 @@
     document.getElementById('revNext').addEventListener('click',()=>track.scrollBy({left:Math.max(track.clientWidth-slideStep(),slideStep()),behavior:'smooth'}));
     track.addEventListener('scroll',updateDots,{passive:true});window.addEventListener('resize',renderDots);renderDots();
   </script>
-  <script src="https://widget.prodamus.ru/src/init.js" async></script>
   <script>
     (() => {
       const status = document.getElementById('checkoutStatus');
@@ -355,11 +356,111 @@
       const form = document.getElementById('checkoutConsentForm');
       const payButton = document.getElementById('consentPay');
       const consentBoxes = ['consentPd', 'consentMail', 'consentOffer'].map(id => document.getElementById(id));
+      const retryDocuments = document.getElementById('retryCheckoutDocuments');
+      const directButton = document.getElementById('directCheckoutPay');
+      // Enable only after the real merchant page has been verified.
+      const DIRECT_PAYMENT_VERIFIED = false;
       let activeTariff = null;
       let returnFocus = null;
       let submitting = false;
       let requestVersion = 0;
       let consentDocuments = null;
+      let prepared = null;
+      let widgetLoading = null;
+      let widgetWindow = null;
+      let widgetRecoveryTimer = null;
+      const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+      const requestJson = async (url, options = {}, timeout = 15000) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
+        try {
+          const response = await fetch(url, {...options, cache: 'no-store', signal: controller.signal});
+          let data;
+          try { data = await response.json(); }
+          catch { throw new Error('Сервис временно не отвечает. Попробуйте ещё раз.'); }
+          return {response, data};
+        } catch (error) {
+          if (error.name === 'AbortError') throw new Error('Сервис не ответил вовремя. Попробуйте ещё раз.');
+          if (error instanceof TypeError) throw new Error('Не удалось связаться с сервером. Проверьте соединение и попробуйте ещё раз.');
+          throw error;
+        } finally { clearTimeout(timer); }
+      };
+      const ensureWidget = () => {
+        if (typeof window.payformInit === 'function') return Promise.resolve();
+        if (widgetLoading) return widgetLoading;
+        widgetLoading = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = './prodamus-init.js';
+          script.async = true;
+          const timer = setTimeout(() => {
+            // Do not inject another script while this one is still in flight:
+            // the official initializer declares global constants.
+            reject(new Error('Запускатель оплаты ещё не загрузился. Попробуйте снова или обновите страницу.'));
+          }, 10000);
+          script.onload = () => {
+            clearTimeout(timer);
+            if (typeof window.payformInit === 'function') resolve();
+            else {
+              widgetLoading = null;
+              reject(new Error('Не удалось запустить оплату. Обновите страницу и попробуйте ещё раз.'));
+            }
+          };
+          script.onerror = () => {
+            clearTimeout(timer);
+            script.remove();
+            widgetLoading = null;
+            reject(new Error('Не удалось загрузить запускатель оплаты. Проверьте соединение и повторите попытку.'));
+          };
+          document.head.appendChild(script);
+        });
+        return widgetLoading;
+      };
+      const clearWidgetRecovery = () => {
+        clearTimeout(widgetRecoveryTimer);
+        document.getElementById('widgetRecoveryNotice')?.remove();
+      };
+      const returnFromWidget = () => {
+        document.querySelector('iframe[data-id="prodamus-payform-widget"]')?.remove();
+        widgetWindow = null;
+        clearWidgetRecovery();
+        if (!overlay.hidden) {
+          status.textContent = DIRECT_PAYMENT_VERIFIED
+            ? 'Если окно Prodamus не загрузилось, откройте страницу оплаты без виджета. Заказ и сумма сохранятся.'
+            : 'Prodamus не загрузил оплату. Можно повторить попытку с тем же заказом или обратиться в службу заботы.';
+          updatePayButton();
+          payButton.focus();
+        }
+      };
+      const watchWidget = () => {
+        clearWidgetRecovery();
+        const iframe = document.querySelector('iframe[data-id="prodamus-payform-widget"]');
+        widgetWindow = iframe?.contentWindow || null;
+        widgetRecoveryTimer = setTimeout(() => {
+          if (!document.querySelector('iframe[data-id="prodamus-payform-widget"]')) return;
+          const notice = document.createElement('div');
+          notice.id = 'widgetRecoveryNotice';
+          notice.style.cssText = 'position:fixed;bottom:12px;left:12px;right:12px;z-index:110003;text-align:center;pointer-events:none';
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn btn-ghost';
+          button.style.cssText = 'background:#fffdfb;font-size:14px;padding:12px 18px;box-shadow:0 4px 20px #0002;pointer-events:auto';
+          button.textContent = 'Оплата зависла? Вернуться к заказу';
+          button.addEventListener('click', returnFromWidget);
+          notice.appendChild(button);
+          document.body.appendChild(notice);
+        }, 12000);
+      };
+      window.addEventListener('message', event => {
+        if (event.origin !== 'https://widget.prodamus.ru' || event.source !== widgetWindow ||
+            event.data?.source !== 'prodamus') return;
+        if (['error', 'fail'].includes(event.data.status)) returnFromWidget();
+        if (event.data.status === 'close') {
+          widgetWindow = null;
+          clearWidgetRecovery();
+        }
+        // A browser message is NOT confirmation of payment or authorization.
+        if (event.data.status === 'success') clearWidgetRecovery();
+      });
       const isPreview = location.hostname.endsWith('.onreza.app') &&
         location.hostname !== 'sales-club-fabrika-zagotovok-kozlovheritage.onreza.app';
       const clubBase = (isPreview
@@ -373,10 +474,21 @@
         offer: document.querySelector('label[for="consentOffer"] a')
       };
       const loadConsentDocuments = async version => {
+        retryDocuments.hidden = true;
         try {
-          const response = await fetch(clubBase + '/api/legal/checkout-documents', {cache: 'no-store'});
-          if (!response.ok) throw new Error('Не удалось загрузить документы. Закройте форму и попробуйте снова.');
-          const data = await response.json();
+          let data;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            if (version !== requestVersion || overlay.hidden) return;
+            try {
+              const result = await requestJson(clubBase + '/api/legal/checkout-documents', {}, 8000);
+              if (!result.response.ok) throw new Error('Не удалось загрузить документы.');
+              data = result.data;
+              break;
+            } catch (error) {
+              if (attempt === 2) throw error;
+              await delay(600 * (attempt + 1));
+            }
+          }
           if (version !== requestVersion || overlay.hidden) return;
           if (!data.documents || !Object.keys(documentLinks).every(key =>
             typeof data.documents[key]?.id === 'string' &&
@@ -387,7 +499,10 @@
           Object.entries(documentLinks).forEach(([key, link]) => { link.href = consentDocuments[key].href; });
           status.textContent = '';
         } catch (error) {
-          if (version === requestVersion && !overlay.hidden) status.textContent = error.message;
+          if (version === requestVersion && !overlay.hidden) {
+            status.textContent = 'Не удалось загрузить документы. Нажмите «Повторить загрузку документов» — введённые данные сохранятся.';
+            retryDocuments.hidden = false;
+          }
         } finally {
           if (version === requestVersion && !overlay.hidden) {
             consentBoxes.forEach(box => { box.disabled = false; });
@@ -438,9 +553,23 @@
       const validName = () => /^[\p{L}][\p{L}\p{M}'’\-]*(?: [\p{L}][\p{L}\p{M}'’\-]*)+$/u.test(nameInput.value.trim().replace(/\s+/gu, ' '));
       const canPay = () => Boolean(activeTariff && consentDocuments && showQuote() && emailInput.value.trim() && emailInput.checkValidity() &&
         (activeTariff !== 'premium' || nameInput.checkValidity()) && consentBoxes.every(box => box.checked));
+      const fingerprint = () => JSON.stringify({
+        tariff: activeTariff, email: emailInput.value.trim().toLowerCase(),
+        name: activeTariff === 'premium' ? nameInput.value.trim().replace(/\s+/gu, ' ') : '',
+        promo: promoInput.value.trim(), choices: consentBoxes.map(box => box.checked),
+        documents: consentDocuments && Object.values(consentDocuments).map(doc => doc.id)
+      });
       const updatePayButton = () => {
-        nameInput.setCustomValidity(activeTariff !== 'premium' || !nameInput.value.trim() || validName() ? '' : 'Укажите имя и фамилию');
+        const invalidName = activeTariff === 'premium' && Boolean(nameInput.value.trim()) && !validName();
+        nameInput.setCustomValidity(invalidName ? 'Укажите имя и фамилию' : '');
+        nameInput.setAttribute('aria-invalid', String(invalidName));
+        const hint = document.getElementById('checkoutNameHint');
+        hint.textContent = invalidName ? 'Укажите и имя, и фамилию — например, Дарья Иванова. Без фамилии перейти к оплате нельзя.'
+          : 'Укажите оба слова — так они будут отображаться в личном кабинете.';
+        hint.style.color = invalidName ? '#a3273b' : '';
         payButton.disabled = submitting || !canPay();
+        directButton.hidden = !DIRECT_PAYMENT_VERIFIED || !prepared || prepared.fingerprint !== fingerprint() || !canPay();
+        directButton.disabled = submitting;
       };
       const closeModal = () => {
         if (overlay.hidden) return;
@@ -449,6 +578,9 @@
         document.body.classList.remove('checkout-locked');
         activeTariff = null;
         consentDocuments = null;
+        prepared = null;
+        retryDocuments.hidden = true;
+        returnFromWidget();
         status.textContent = '';
         updatePayButton();
         returnFocus?.focus();
@@ -467,6 +599,8 @@
         emailInput.value = '';
         nameInput.value = '';
         promoInput.value = '';
+        prepared = null;
+        directButton.hidden = true;
         consentBoxes.forEach(box => { box.checked = false; });
         consentBoxes.forEach(box => { box.disabled = true; });
         consentDocuments = null;
@@ -477,6 +611,7 @@
         updatePayButton();
         emailInput.focus();
         loadConsentDocuments(requestVersion);
+        ensureWidget().catch(() => {});
       };
       document.querySelectorAll('.checkout-button').forEach(button => {
         button.addEventListener('click', () => openModal(button));
@@ -497,15 +632,24 @@
       nameInput.addEventListener('input', updatePayButton);
       promoInput.addEventListener('input', updatePayButton);
       consentBoxes.forEach(box => box.addEventListener('change', updatePayButton));
-      const waitForWidget = () => new Promise((resolve, reject) => {
-        let tries = 0;
-        const check = () => {
-          if (typeof window.payformInit === 'function') return resolve();
-          if (++tries >= 10) return reject(new Error('Не удалось загрузить платёжный модуль. Попробуйте позже.'));
-          setTimeout(check, 400);
-        };
-        check();
+      retryDocuments.addEventListener('click', () => {
+        if (submitting) return;
+        prepared = null;
+        consentDocuments = null;
+        consentBoxes.forEach(box => { box.checked = false; box.disabled = true; });
+        status.textContent = 'Повторно загружаем документы…';
+        loadConsentDocuments(++requestVersion);
+        updatePayButton();
       });
+      const waitForWidget = async () => {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try { await ensureWidget(); return; }
+          catch (error) {
+            if (attempt === 1 || widgetLoading) throw error;
+            await delay(600);
+          }
+        }
+      };
       form.addEventListener('submit', async event => {
         event.preventDefault();
         if (!canPay() || submitting) { updatePayButton(); return; }
@@ -513,6 +657,7 @@
         const email = emailInput.value.trim().toLowerCase();
         const buyerName = tariff === 'premium' ? nameInput.value.trim().replace(/\s+/gu, ' ') : undefined;
         const promo = promoInput.value.trim();
+        const preparedFingerprint = fingerprint();
         const version = ++requestVersion;
         submitting = true;
         emailInput.disabled = true;
@@ -522,7 +667,11 @@
         status.textContent = '';
         updatePayButton();
         try {
-          const response = await fetch(endpoint, {
+          let checkout;
+          if (prepared?.fingerprint === preparedFingerprint) {
+            checkout = prepared.checkout;
+          } else {
+          const {response, data} = await requestJson(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({tariff, email, ...(buyerName ? {buyerName} : {}), promo,
@@ -533,14 +682,19 @@
                 documents: Object.fromEntries(Object.entries(consentDocuments).map(([key, doc]) => [key, doc.id]))
               }
             })
-          });
+          }, 20000);
           if (version !== requestVersion) return;
-          const checkout = await response.json();
+          checkout = data;
           if (!response.ok) throw new Error(checkout.message || 'Оплата пока недоступна.');
+          prepared = {checkout, email, fingerprint: preparedFingerprint};
+          }
           await waitForWidget();
           if (version !== requestVersion) return;
           await window.payformInit('vera-mlgn.payform.ru', checkout);
-          if (version === requestVersion) closeModal();
+          if (version === requestVersion) {
+            status.textContent = 'Открываем защищённое окно Prodamus…';
+            watchWidget();
+          }
         } catch (error) {
           if (version === requestVersion) status.textContent = error.message || 'Не удалось открыть оплату. Попробуйте позже.';
         } finally {
@@ -551,6 +705,42 @@
           payButton.textContent = 'Перейти к оплате';
           updatePayButton();
         }
+      });
+      directButton.addEventListener('click', async () => {
+        if (!DIRECT_PAYMENT_VERIFIED || submitting || !prepared ||
+            prepared.fingerprint !== fingerprint() || !canPay()) return;
+        const saved = prepared;
+        const version = requestVersion;
+        submitting = true;
+        updatePayButton();
+        status.textContent = 'Подготавливаем прямой переход в Prodamus…';
+        try {
+          const {response, data} = await requestJson(clubBase + '/api/checkout/direct', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({orderId: saved.checkout.order_id, email: saved.email})
+          });
+          if (version !== requestVersion || overlay.hidden) return;
+          if (!response.ok) throw new Error(data.message || 'Прямой переход пока недоступен.');
+          if (data.action !== 'https://vera-mlgn.payform.ru/' || data.method !== 'POST' ||
+              !Array.isArray(data.fields) || data.fields.length > 30 ||
+              !data.fields.every(field => typeof field.name === 'string' && typeof field.value === 'string'))
+            throw new Error('Не удалось проверить платёжную форму.');
+          const paymentForm = document.createElement('form');
+          paymentForm.method = 'POST';
+          paymentForm.action = data.action;
+          paymentForm.acceptCharset = 'UTF-8';
+          paymentForm.hidden = true;
+          paymentForm.target = '_self';
+          data.fields.forEach(field => {
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = field.name; input.value = field.value;
+            paymentForm.appendChild(input);
+          });
+          document.body.appendChild(paymentForm);
+          HTMLFormElement.prototype.submit.call(paymentForm);
+        } catch (error) {
+          if (version === requestVersion) status.textContent = error.message;
+        } finally { submitting = false; updatePayButton(); }
       });
     })();
   </script>
