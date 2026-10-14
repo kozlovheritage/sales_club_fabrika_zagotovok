@@ -212,7 +212,7 @@
             <button type="button" class="btn btn-ghost checkout-button" data-tariff="basic" aria-label="Оплатить базовый тариф">Вступить в клуб →</button>
           </article>
         </div>
-          <div class="pricing-note reveal"><p>После оплаты Prodamus отправит письмо: базовому тарифу — доступ в закрытый Telegram-клуб, расширенному — ссылку на платформу, email и пароль. Вопросы — в <a href="https://t.me/zabota_veramlgn" target="_blank" rel="noopener noreferrer">службу заботы</a>.</p></div>
+          <div class="pricing-note reveal"><p>После подтверждения оплаты служба заботы клуба отправит письмо: базовому тарифу — доступ в закрытый Telegram-клуб, расширенному — ссылку на платформу, email и пароль. Вопросы — в <a href="https://t.me/zabota_veramlgn" target="_blank" rel="noopener noreferrer">службу заботы</a>.</p></div>
       </div>
     </section>
 
@@ -308,7 +308,7 @@
         <p class="consent-status" id="checkoutStatus" role="status" aria-live="polite"></p>
         <button type="button" class="btn btn-ghost" id="retryCheckoutDocuments" hidden style="width:100%;margin-top:12px;">Повторить загрузку документов</button>
         <button type="button" class="btn btn-ghost" id="directCheckoutPay" hidden style="width:100%;margin-top:12px;">Открыть страницу оплаты без виджета</button>
-        <p class="consent-help">Платёж откроется в защищённой форме Prodamus.</p>
+        <p class="consent-help">Платёж откроется в защищённой форме платёжного сервиса. Письмо с доступом отправит клуб после подтверждения оплаты.</p>
       </form>
     </div>
   </div>
@@ -569,7 +569,7 @@
           : 'Укажите оба слова — так они будут отображаться в личном кабинете.';
         hint.style.color = invalidName ? '#a3273b' : '';
         payButton.disabled = submitting || !canPay();
-        directButton.hidden = !DIRECT_PAYMENT_VERIFIED || !prepared || prepared.fingerprint !== fingerprint() || !canPay();
+        directButton.hidden = !DIRECT_PAYMENT_VERIFIED || !prepared || prepared.checkout.provider === 'cloudpayments' || prepared.fingerprint !== fingerprint() || !canPay();
         directButton.disabled = submitting;
       };
       const closeModal = () => {
@@ -612,7 +612,6 @@
         updatePayButton();
         emailInput.focus();
         loadConsentDocuments(requestVersion);
-        ensureWidget().catch(() => {});
       };
       document.querySelectorAll('.checkout-button').forEach(button => {
         button.addEventListener('click', () => openModal(button));
@@ -675,7 +674,7 @@
           const {response, data} = await requestJson(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({tariff, email, ...(buyerName ? {buyerName} : {}), promo,
+            body: JSON.stringify({tariff, email, ...(buyerName ? {buyerName} : {}), promo, checkoutProtocol: 2,
               consents: {
                 personalData: consentBoxes[0].checked,
                 marketing: consentBoxes[1].checked,
@@ -689,6 +688,21 @@
           if (!response.ok) throw new Error(checkout.message || 'Оплата пока недоступна.');
           prepared = {checkout, email, fingerprint: preparedFingerprint};
           }
+          if (checkout.provider === 'cloudpayments') {
+            let paymentUrl;
+            try { paymentUrl = new URL(checkout.paymentUrl); } catch {}
+            if (!paymentUrl || paymentUrl.protocol !== 'https:' ||
+                paymentUrl.hostname !== 'orders.cloudpayments.ru' || paymentUrl.port ||
+                paymentUrl.username || paymentUrl.password || paymentUrl.search || paymentUrl.hash ||
+                !/^\/d\/[a-zA-Z0-9_-]+$/.test(paymentUrl.pathname))
+              throw new Error('Не удалось проверить ссылку CloudPayments. Оплата не открыта.');
+            if (version !== requestVersion) return;
+            status.textContent = 'Переходим в защищённую форму CloudPayments…';
+            location.assign(paymentUrl.href);
+            return;
+          }
+          if (checkout.provider && checkout.provider !== 'prodamus')
+            throw new Error('Неизвестный способ оплаты. Обратитесь в службу заботы.');
           await waitForWidget();
           if (version !== requestVersion) return;
           await window.payformInit('vera-mlgn.payform.ru', checkout);
