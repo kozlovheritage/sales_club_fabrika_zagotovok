@@ -73,6 +73,7 @@
     @media(max-width:700px){.raffle-promo{grid-template-columns:1fr;gap:24px;padding:24px;margin-bottom:40px;max-width:440px}.raffle-promo img{max-width:300px;margin:auto}.raffle-promo h2{font-size:1.8rem}.raffle-promo p{font-size:1rem}.raffle-promo .btn{width:100%}}
     .price-countdown{position:relative;max-width:620px;margin:0 auto 36px;padding:24px 20px;text-align:center;border:1px solid var(--pink-light);border-radius:var(--r);background:var(--warm-white)}
     .price-countdown[hidden]{display:none}
+    .price-countdown .btn{margin-top:20px;width:100%;max-width:340px}
     .price-countdown h3{font-size:1.12rem;margin:0 0 8px}
     .price-countdown p{font-size:.85rem;color:var(--text-mid);margin:0}
     .price-countdown-digits{display:flex;justify-content:center;gap:12px;margin:18px 0}
@@ -106,17 +107,6 @@
     <section class="hero" id="hero">
       <div class="hero-noise"></div>
       <div class="container">
-        <aside class="price-countdown" id="price-countdown" aria-labelledby="price-countdown-title" data-deadline="2026-10-19T00:00:00+03:00" hidden>
-          <h3 id="price-countdown-title">До повышения цен</h3>
-          <p>Цены повысятся <time datetime="2026-10-19T00:00:00+03:00">19 октября в 00:00 МСК</time></p>
-          <div class="price-countdown-digits" role="timer" aria-live="off" aria-label="Осталось до повышения цен">
-            <div class="price-countdown-unit"><b data-countdown="days">00</b><span>дней</span></div>
-            <div class="price-countdown-unit"><b data-countdown="hours">00</b><span>часов</span></div>
-            <div class="price-countdown-unit"><b data-countdown="minutes">00</b><span>минут</span></div>
-            <div class="price-countdown-unit"><b data-countdown="seconds">00</b><span>секунд</span></div>
-          </div>
-          <p>Успейте вступить по текущей цене</p>
-        </aside>
         <div class="hero-inner">
         <div class="hero-content">
           <div class="hero-eyebrow reveal">Кулинарный клуб Веры Малыгиной</div>
@@ -142,6 +132,20 @@
       </div></div>
     </section>
 
+    <div class="container">
+      <aside class="price-countdown" id="price-countdown" aria-labelledby="price-countdown-title" data-deadline="2026-10-19T00:00:00+03:00" hidden>
+        <h3 id="price-countdown-title">До повышения цен</h3>
+        <p>Цены повысятся <time datetime="2026-10-19T00:00:00+03:00">19 октября в 00:00 МСК</time></p>
+        <div class="price-countdown-digits" role="timer" aria-live="off" aria-label="Осталось до повышения цен">
+          <div class="price-countdown-unit"><b data-countdown="days">00</b><span>дней</span></div>
+          <div class="price-countdown-unit"><b data-countdown="hours">00</b><span>часов</span></div>
+          <div class="price-countdown-unit"><b data-countdown="minutes">00</b><span>минут</span></div>
+          <div class="price-countdown-unit"><b data-countdown="seconds">00</b><span>секунд</span></div>
+        </div>
+        <p>Успейте вступить по текущей цене</p>
+        <a class="btn" href="#pricing">ВСТУПИТЬ В КЛУБ</a>
+      </aside>
+    </div>
     <div class="transition-band" style="--from:var(--cream);--to:var(--warm-white)"></div>
     <section class="benefits" id="benefits">
       <div class="container">
