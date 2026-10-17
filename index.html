@@ -71,6 +71,15 @@
     .raffle-promo strong,.raffle-promo time{font-weight:700;color:var(--pink-dark)}
     .raffle-promo .btn{padding:14px 24px}
     @media(max-width:700px){.raffle-promo{grid-template-columns:1fr;gap:24px;padding:24px;margin-bottom:40px;max-width:440px}.raffle-promo img{max-width:300px;margin:auto}.raffle-promo h2{font-size:1.8rem}.raffle-promo p{font-size:1rem}.raffle-promo .btn{width:100%}}
+    .price-countdown{max-width:620px;margin:-12px auto 36px;padding:24px 20px;text-align:center;border:1px solid var(--pink-light);border-radius:var(--r);background:var(--warm-white)}
+    .price-countdown[hidden]{display:none}
+    .price-countdown h3{font-size:1.12rem;margin:0 0 8px}
+    .price-countdown p{font-size:.85rem;color:var(--text-mid);margin:0}
+    .price-countdown-digits{display:flex;justify-content:center;gap:12px;margin:18px 0}
+    .price-countdown-unit{min-width:64px}
+    .price-countdown-unit b{display:block;padding:10px 8px;border-radius:12px;background:#fff0f4;color:var(--pink-dark);font-size:1.8rem;line-height:1.2;font-variant-numeric:tabular-nums}
+    .price-countdown-unit span{display:block;margin-top:6px;font-size:.72rem;color:var(--text-mid)}
+    @media(max-width:500px){.price-countdown{padding:22px 16px}.price-countdown-digits{gap:8px}.price-countdown-unit{min-width:54px}.price-countdown-unit b{font-size:1.6rem}}
   </style>
 </head>
 <body>
@@ -182,6 +191,17 @@
           </div>
         </aside>
         <div class="section-header reveal"><h2>Тарифы</h2><p>Выберите подходящий вариант участия в клубе</p></div>
+        <aside class="price-countdown" id="price-countdown" aria-labelledby="price-countdown-title" data-deadline="2026-10-19T00:00:00+03:00" hidden>
+          <h3 id="price-countdown-title">До повышения цен</h3>
+          <p>Цены повысятся <time datetime="2026-10-19T00:00:00+03:00">19 октября в 00:00 МСК</time></p>
+          <div class="price-countdown-digits" role="timer" aria-live="off" aria-label="Осталось до повышения цен">
+            <div class="price-countdown-unit"><b data-countdown="days">00</b><span>дней</span></div>
+            <div class="price-countdown-unit"><b data-countdown="hours">00</b><span>часов</span></div>
+            <div class="price-countdown-unit"><b data-countdown="minutes">00</b><span>минут</span></div>
+            <div class="price-countdown-unit"><b data-countdown="seconds">00</b><span>секунд</span></div>
+          </div>
+          <p>Успейте вступить по текущей цене</p>
+        </aside>
         <div class="pricing-grid">
           <article class="pricing-card popular reveal reveal-delay-1" id="expanded-tariff">
             <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 790 ₽ <span class="old">8 490 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
@@ -792,6 +812,33 @@
           if (version === requestVersion) status.textContent = error.message;
         } finally { submitting = false; updatePayButton(); }
       });
+    })();
+  </script>
+  <script>
+    (() => {
+      const panel = document.getElementById('price-countdown');
+      const deadline = Date.parse(panel.dataset.deadline);
+      let timeout;
+      function refreshPriceCountdown() {
+        window.clearTimeout(timeout);
+        const remaining = deadline - Date.now();
+        panel.hidden = !Number.isFinite(remaining) || remaining <= 0;
+        if (panel.hidden) return;
+        const total = Math.ceil(remaining / 1000);
+        const values = {
+          days: Math.floor(total / 86400),
+          hours: Math.floor(total / 3600) % 24,
+          minutes: Math.floor(total / 60) % 60,
+          seconds: total % 60
+        };
+        Object.keys(values).forEach(key => {
+          panel.querySelector('[data-countdown="' + key + '"]').textContent = String(values[key]).padStart(2, '0');
+        });
+        timeout = window.setTimeout(refreshPriceCountdown, Math.min(1000, remaining));
+      }
+      document.addEventListener('visibilitychange', refreshPriceCountdown);
+      window.addEventListener('pageshow', refreshPriceCountdown);
+      refreshPriceCountdown();
     })();
   </script>
 </body>
