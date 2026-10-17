@@ -62,6 +62,15 @@
     .consent-help{text-align:center;font-size:.77rem;color:var(--text-light);margin:12px 0 0}
     @media(max-width:500px){.consent-overlay{padding:12px}.consent-dialog{padding:26px 20px;max-height:calc(100dvh - 24px)}.consent-dialog h2{font-size:1.55rem}.consent-check{font-size:.83rem}}
     .pricing-grid{align-items:start}
+    .raffle-promo{max-width:920px;margin:0 auto 56px;display:grid;grid-template-columns:310px 1fr;gap:36px;align-items:center;padding:28px;background:linear-gradient(135deg,#fff5f7,#faf7f2);border:1px solid var(--pink-light);border-radius:var(--r);box-shadow:var(--shadow)}
+    .raffle-promo[hidden]{display:none}
+    .raffle-promo img{display:block;width:100%;height:auto;border-radius:18px}
+    .raffle-promo .label{margin-bottom:16px}
+    .raffle-promo h2{font-size:clamp(1.8rem,3vw,2.5rem);margin-bottom:20px}
+    .raffle-promo p{font-size:1.08rem;line-height:1.65;margin-bottom:24px}
+    .raffle-promo strong,.raffle-promo time{font-weight:700;color:var(--pink-dark)}
+    .raffle-promo .btn{padding:14px 24px}
+    @media(max-width:700px){.raffle-promo{grid-template-columns:1fr;gap:24px;padding:24px;margin-bottom:40px;max-width:440px}.raffle-promo img{max-width:300px;margin:auto}.raffle-promo h2{font-size:1.8rem}.raffle-promo p{font-size:1rem}.raffle-promo .btn{width:100%}}
   </style>
 </head>
 <body>
@@ -163,11 +172,20 @@
 
     <section class="pricing" id="pricing">
       <div class="container">
+        <aside class="raffle-promo" id="raffle" aria-labelledby="raffle-title" data-expires-at="2026-10-19T00:00:00+03:00" hidden>
+          <img src="raffle-gifts-october-2026.webp" width="992" height="1280" alt="Подарки розыгрыша: набор ножей, вакууматор, набор для вакуумного хранения продуктов и вафельница" loading="lazy" decoding="async">
+          <div>
+            <span class="label">Для участниц Расширенного тарифа</span>
+            <h2 id="raffle-title">Розыгрыш подарков</h2>
+            <p>Вступая на тариф <strong>«Расширенный»</strong> до <time datetime="2026-10-18T23:59:00+03:00">18.10, 23:59 МСК</time>, вы автоматически участвуете в розыгрыше подарков.</p>
+            <a href="#expanded-tariff" class="btn">Выбрать Расширенный →</a>
+          </div>
+        </aside>
         <div class="section-header reveal"><h2>Тарифы</h2><p>Выберите подходящий вариант участия в клубе</p></div>
         <div class="pricing-grid">
-          <article class="pricing-card popular reveal reveal-delay-1">
+          <article class="pricing-card popular reveal reveal-delay-1" id="expanded-tariff">
             <div class="popular-badge">Популярный</div><div class="pricing-name">Расширенный</div><div class="pricing-price">6 790 ₽ <span class="old">8 490 ₽</span></div><span class="price-note">Оплачивайте 1 раз, пользуйтесь материалами всю жизнь!</span><div class="pricing-divider"></div>
-            <ul class="pricing-highlights"><li>180+ рецептов заготовок</li><li>450+ рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Доступ к чату и платформе клуба</li></ul>
+            <ul class="pricing-highlights"><li>180+ рецептов заготовок</li><li>450+ рецептов приготовления к столу</li><li>Формат: видео + PDF-сборники</li><li>Доступ к чату и платформе клуба</li><li data-raffle-highlight hidden>Участие в розыгрыше подарков при вступлении до 18.10, 23:59 МСК</li></ul>
             <details class="pricing-details"><summary>Что входит в тариф</summary>
             <ul class="pricing-features">
               <li><strong>ЛЕКТОРИЙ КЛУБА</strong>Порядок на кухне, правила хранения заготовок и планирование питания.</li>
@@ -323,6 +341,23 @@
     <div class="foot-bottom"><p>© 2025 Фабрика Заготовок. Все права защищены.</p></div>
   </div></footer>
 
+  <script>
+    // Announcements are independent of checkout and never change payment eligibility.
+    (function () {
+      var promo = document.getElementById('raffle');
+      if (!promo) return;
+      var expiresAt = Date.parse(promo.getAttribute('data-expires-at'));
+      function refreshRaffle() {
+        var remaining = expiresAt - Date.now();
+        promo.hidden = !(remaining > 0);
+        document.querySelectorAll('[data-raffle-highlight]').forEach(function (item) {
+          item.hidden = promo.hidden;
+        });
+        if (remaining > 0) window.setTimeout(refreshRaffle, Math.min(remaining, 60000));
+      }
+      refreshRaffle();
+    })();
+  </script>
   <script>
     const menuButton = document.getElementById('mbtn');
     const nav = document.getElementById('nav');
