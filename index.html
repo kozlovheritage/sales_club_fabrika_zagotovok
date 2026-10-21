@@ -537,10 +537,7 @@
         }
       };
       const prices = {premium: 8490, basic: 6990}; // Active phase: regular; keep in sync with club checkout.mjs.
-      const collectionDiscounts = {
-        premium: [1100, 1400],
-        basic: [1000, 1100]
-      };
+      const collectionPrices = {premium: 5690, basic: 4990};
       const fixed = {
         FRIENDSFABRIKA1: {premium: 6790, basic: 5990},
         FABRIKA1R: {premium: 3890, basic: 2890},
@@ -554,7 +551,7 @@
         if (codes.length > 2) throw new Error('Можно применить не более двух кодов SKIDKA1C');
         let price = prices[tariff];
         if (codes.length) {
-          if (codes.every(code => code === 'SKIDKA1C')) price -= collectionDiscounts[tariff][codes.length - 1];
+          if (codes.every(code => code === 'SKIDKA1C')) price = collectionPrices[tariff];
           else if (codes.length === 1 && fixed[codes[0]]) price = fixed[codes[0]][tariff];
           else throw new Error(codes.some(code => !fixed[code] && code !== 'SKIDKA1C')
             ? 'Промокод не найден' : 'Эти промокоды нельзя суммировать');
